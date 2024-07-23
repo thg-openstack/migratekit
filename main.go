@@ -36,17 +36,21 @@ var BusTypeOptsIds = map[BusTypeOpts][]string{
 }
 
 var (
-	endpoint         string
-	username         string
-	password         string
-	path             string
-	flavorId         string
-	networkMapping   cmd.NetworkMappingFlag
-	availabilityZone string
-	volumeType       string
-	securityGroups   []string
-	enablev2v        bool
-	busType          BusTypeOpts
+	endpoint          string
+	username          string
+	password          string
+	path              string
+	flavorId          string
+	networkMapping    cmd.NetworkMappingFlag
+	availabilityZone  string
+	volumeType        string
+	securityGroups    []string
+	enablev2v         bool
+	busType           BusTypeOpts
+	volQuery          string
+	volSameHost       []string
+	volDiffHost       []string
+	schedulerHintOpts *SchedulerHintOpts
 )
 
 var rootCmd = &cobra.Command{
@@ -127,6 +131,13 @@ var rootCmd = &cobra.Command{
 			BusType:          BusTypeOptsIds[busType][0],
 		}
 		ctx = context.WithValue(ctx, "volumeCreateOpts", &v)
+
+		v := target.SchedulerHintOpts{
+			DifferentHost: volDiffHost,
+			SameHost:      volSameHost,
+			Query:         volQuery,
+		}
+		ctx = context.WithValue(ctx, "schedulerHintOpts", &v)
 
 		cmd.SetContext(ctx)
 
@@ -274,6 +285,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&volumeType, "volume-type", "", "Openstack volume type")
 
 	rootCmd.PersistentFlags().Var(enumflag.New(&busType, "disk-bus-type", BusTypeOptsIds, enumflag.EnumCaseInsensitive), "disk-bus-type", "Specifies the type of disk controller to attach disk devices to.")
+
+	rootCmd.PersistentFlags().StringVar(volQuery, "volume-query", nil, "Cinder volume backend hint query using JsonFilter")
 
 	cutoverCmd.Flags().StringVar(&flavorId, "flavor", "", "OpenStack Flavor ID")
 	cutoverCmd.MarkFlagRequired("flavor")

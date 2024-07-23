@@ -30,6 +30,12 @@ type VolumeCreateOpts struct {
 	BusType          string
 }
 
+type SchedulerHintOpts struct {
+	DifferentHost []string
+	SameHost      []string
+	Query         string
+}
+
 func NewOpenStack(ctx context.Context, vm *object.VirtualMachine, disk *types.VirtualDisk) (*OpenStack, error) {
 	clientSet, err := openstack.NewClientSet(ctx)
 	if err != nil {
@@ -76,6 +82,7 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 	}
 
 	opts := ctx.Value("volumeCreateOpts").(*VolumeCreateOpts)
+	hintOpts := ctx.Value("schedulerHintOpts").(*SchedulerHintOpts)
 
 	if opts.BusType == "scsi" {
 		volumeMetadata["hw_disk_bus"] = "scsi"
@@ -90,7 +97,7 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 			AvailabilityZone: opts.AvailabilityZone,
 			VolumeType:       opts.VolumeType,
 			Metadata:         volumeMetadata,
-		}, nil).Extract()
+		}, hintOpts).Extract()
 		if err != nil {
 			return err
 		}
