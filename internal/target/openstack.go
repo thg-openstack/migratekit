@@ -30,6 +30,23 @@ type VolumeCreateOpts struct {
 	BusType          string
 }
 
+type SchedulerHintOpts struct {
+	DifferentHost []string
+	SameHost      []string
+	Query         string
+}
+
+func (s *SchedulerHintOpts) Convert() *volumes.SchedulerHintOpts {
+	if s == nil {
+		return nil
+	}
+	return &volumes.SchedulerHintOpts{
+		DifferentHost: s.DifferentHost,
+		SameHost:      s.SameHost,
+		Query:         s.Query,
+	}
+}
+
 func NewOpenStack(ctx context.Context, vm *object.VirtualMachine, disk *types.VirtualDisk) (*OpenStack, error) {
 	clientSet, err := openstack.NewClientSet(ctx)
 	if err != nil {
@@ -76,6 +93,7 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 	}
 
 	opts := ctx.Value("volumeCreateOpts").(*VolumeCreateOpts)
+	hintOpts := ctx.Value("schedulerHintOpts").(*SchedulerHintOpts)
 
 	log.Info("Using volume hints: ", hintOpts)
 
@@ -92,7 +110,7 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 			AvailabilityZone: opts.AvailabilityZone,
 			VolumeType:       opts.VolumeType,
 			Metadata:         volumeMetadata,
-		}, nil).Extract()
+		}, hintOpts.Convert()).Extract()
 		if err != nil {
 			return err
 		}
