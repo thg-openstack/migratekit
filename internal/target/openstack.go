@@ -32,6 +32,23 @@ type VolumeCreateOpts struct {
 	BusType          string
 }
 
+type SchedulerHintOpts struct {
+	DifferentHost []string
+	SameHost      []string
+	Query         string
+}
+
+func (s *SchedulerHintOpts) Convert() *volumes.SchedulerHintOpts {
+	if s == nil {
+		return nil
+	}
+	return &volumes.SchedulerHintOpts{
+		DifferentHost: s.DifferentHost,
+		SameHost:      s.SameHost,
+		Query:         s.Query,
+	}
+}
+
 func NewOpenStack(ctx context.Context, vm *object.VirtualMachine, disk *types.VirtualDisk) (*OpenStack, error) {
 	clientSet, err := openstack.NewClientSet(ctx)
 	if err != nil {
@@ -78,6 +95,7 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 	}
 
 	opts := ctx.Value("volumeCreateOpts").(*VolumeCreateOpts)
+	hintOpts := ctx.Value("schedulerHintOpts").(*SchedulerHintOpts)
 
 	log.Info("Using volume hints: ", hintOpts)
 
@@ -88,7 +106,13 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 
 	if errors.Is(err, openstack.ErrorVolumeNotFound) {
 		log.Info("Creating new volume")
-		volume, err = t.createVolume(ctx, opts, volumeMetadata)
+		volume, err = volumes.Create(ctx, t.ClientSet.BlockStorage, volumes.CreateOpts{
+			Name:             DiskLabel(t.VirtualMachine, t.Disk),
+			Size:             int(t.Disk.CapacityInBytes) / 1024 / 1024 / 1024,
+			AvailabilityZone: opts.AvailabilityZone,
+			VolumeType:       opts.VolumeType,
+			Metadata:         volumeMetadata,
+		}, hintOpts.Convert()).Extract()
 		if err != nil {
 			return err
 		}
