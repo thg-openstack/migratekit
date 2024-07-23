@@ -287,7 +287,7 @@ var cutoverCmd = &cobra.Command{
 		log.Info("Starting migration cycle")
 
 		servers := vmware_nbdkit.NewNbdkitServers(vddkConfig, vm)
-		err = servers.MigrationCycle(ctx, false)
+		err = servers.MigrationCycle(ctx, enablev2v)
 		if err != nil {
 			return err
 		}
@@ -359,9 +359,14 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVar(&vzUnsafeVolumeByName, "vz-unsafe-volume-by-name", false, "Only use the name to find a volume - workaround for virtuozzu - dangerous option")
 
-    rootCmd.PersistentFlags().StringVar(&osType, "os-type", "", "Set os_type in the volume (image) metadata, (if set to \"auto\", it tries to detect the type from VMware GuestId)")
+  rootCmd.PersistentFlags().StringVar(&osType, "os-type", "", "Set os_type in the volume (image) metadata, (if set to \"auto\", it tries to detect the type from VMware GuestId)")
 
-    rootCmd.PersistentFlags().BoolVar(&enableQemuGuestAgent, "enable-qemu-guest-agent", false, "Sets the hw_qemu_guest_agent metadata parameter to yes")
+  rootCmd.PersistentFlags().BoolVar(&enableQemuGuestAgent, "enable-qemu-guest-agent", false, "Sets the hw_qemu_guest_agent metadata parameter to yes")
+	rootCmd.PersistentFlags().StringVar(&volumeQuery, "volume-query", "", "Cinder volume backend hint query using JsonFilter")
+
+	rootCmd.PersistentFlags().StringSliceVar(&volumeSameHost, "volume-same-host", nil, "Uses the SameBackendFilter.  Takes a comma separated list of volumes to colocate a volume with (eg, 'c45c4150-6639-43ec-aae1-edb4871186e0,19f72e56-013a-45bf-9a51-9955d0d414e')")
+	rootCmd.PersistentFlags().StringSliceVar(&volumeDiffHost, "volume-diff-host", nil, "Uses the DifferentBackendFilter.  Takes a comma separated list of volumes to colocate a volume with (eg, 'c45c4150-6639-43ec-aae1-edb4871186e0,19f72e56-013a-45bf-9a51-9955d0d414e')")
+	rootCmd.MarkFlagsMutuallyExclusive("volume-same-host", "volume-diff-host", "volume-query")
 
 	cutoverCmd.Flags().StringVar(&flavorId, "flavor", "", "OpenStack Flavor ID")
 	cutoverCmd.MarkFlagRequired("flavor")
