@@ -47,6 +47,9 @@ var (
 	securityGroups   []string
 	enablev2v        bool
 	busType          BusTypeOpts
+	volumeQuery      string
+	volumeSameHost   []string
+	volumeDiffHost   []string
 )
 
 var rootCmd = &cobra.Command{
@@ -127,6 +130,13 @@ var rootCmd = &cobra.Command{
 			BusType:          BusTypeOptsIds[busType][0],
 		}
 		ctx = context.WithValue(ctx, "volumeCreateOpts", &v)
+
+		vh := target.SchedulerHintOpts{
+			DifferentHost: volumeDiffHost,
+			SameHost:      volumeSameHost,
+			Query:         volumeQuery,
+		}
+		ctx = context.WithValue(ctx, "schedulerHintOpts", &vh)
 
 		cmd.SetContext(ctx)
 
