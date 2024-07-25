@@ -73,6 +73,9 @@ var (
 	vzUnsafeVolumeByName bool
 	osType               string
     enableQemuGuestAgent bool
+	volumeQuery      string
+	volumeSameHost   []string
+	volumeDiffHost   []string
 )
 
 var rootCmd = &cobra.Command{
@@ -198,6 +201,12 @@ var rootCmd = &cobra.Command{
 		ctx = context.WithValue(ctx, "osType", osType)
 
 		ctx = context.WithValue(ctx, "enableQemuGuestAgent", enableQemuGuestAgent)
+		vh := target.SchedulerHintOpts{
+			DifferentHost: volumeDiffHost,
+			SameHost:      volumeSameHost,
+			Query:         volumeQuery,
+		}
+		ctx = context.WithValue(ctx, "schedulerHintOpts", &vh)
 
 		cmd.SetContext(ctx)
 
