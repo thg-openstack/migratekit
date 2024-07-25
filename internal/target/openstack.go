@@ -79,6 +79,8 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 
 	opts := ctx.Value("volumeCreateOpts").(*VolumeCreateOpts)
 
+	log.Info("Using volume hints: ", hintOpts)
+
 	if opts.BusType == "scsi" {
 		volumeMetadata["hw_disk_bus"] = "scsi"
 		volumeMetadata["hw_scsi_model"] = "virtio-scsi"
