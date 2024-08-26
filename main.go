@@ -279,7 +279,7 @@ var cutoverCmd = &cobra.Command{
 		log.Info("Starting migration cycle")
 
 		servers := vmware_nbdkit.NewNbdkitServers(vddkConfig, vm)
-		err = servers.MigrationCycle(ctx, enablev2v)
+		err = servers.MigrationCycle(ctx, false)
 		if err != nil {
 			return err
 		}
