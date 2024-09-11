@@ -106,6 +106,8 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 
 	if errors.Is(err, openstack.ErrorVolumeNotFound) {
 		log.Info("Creating new volume")
+		// TODO: move this task to createVolume function with passing scheduler hints vs doing it here
+		// volume, err = t.createVolume(ctx, opts, volumeMetadata)
 		volume, err = volumes.Create(ctx, t.ClientSet.BlockStorage, volumes.CreateOpts{
 			Name:             DiskLabel(t.VirtualMachine, t.Disk),
 			Size:             int(t.Disk.CapacityInBytes) / 1024 / 1024 / 1024,
@@ -116,6 +118,17 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		// TODO: need to set default SetImageMetadata if opts.BusType == "scsi"
+		err = volumes.SetImageMetadata(ctx, t.ClientSet.BlockStorage, volume.ID, volumes.ImageMetadataOpts{
+			Metadata: map[string]string{
+				"hw_disk_bus": "scsi",
+				"hw_machine_type": "q35",
+				"hw_scsi_model": "virtio-scsi",
+			},
+			}).ExtractErr()
+			if err != nil {
+				return err
+			}
 
 		// TODO: check if volume is bootable?
 		if true {
