@@ -152,10 +152,11 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-
-		if o.Config.ChangeTrackingEnabled == nil || !*o.Config.ChangeTrackingEnabled {
-			return errors.New("change tracking is not enabled on the virtual machine")
-		}
+		log.Info("Info CBT: ", *o.Config.ChangeTrackingEnabled)
+		// FIXME: review this as CBT is enabled without a reboot
+		// if o.Config.ChangeTrackingEnabled == nil || !*o.Config.ChangeTrackingEnabled {
+		// 	return errors.New("change tracking is not enabled on the virtual machine")
+		// }
 
 		if snapshotRef, _ := vm.FindSnapshot(ctx, "migratekit"); snapshotRef != nil {
 			log.Info("Snapshot already exists")
