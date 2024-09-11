@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-	"os"
 
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/gophercloud/gophercloud/v2/openstack"
