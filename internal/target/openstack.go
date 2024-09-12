@@ -106,29 +106,23 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 
 	if errors.Is(err, openstack.ErrorVolumeNotFound) {
 		log.Info("Creating new volume")
-		// TODO: move this task to createVolume function with passing scheduler hints vs doing it here
-		// volume, err = t.createVolume(ctx, opts, volumeMetadata)
-		volume, err = volumes.Create(ctx, t.ClientSet.BlockStorage, volumes.CreateOpts{
-			Name:             DiskLabel(t.VirtualMachine, t.Disk),
-			Size:             int(t.Disk.CapacityInBytes) / 1024 / 1024 / 1024,
-			AvailabilityZone: opts.AvailabilityZone,
-			VolumeType:       opts.VolumeType,
-			Metadata:         volumeMetadata,
-		}, hintOpts.Convert()).Extract()
+		volume, err = t.createVolume(ctx, opts, volumeMetadata, hintOpts)
 		if err != nil {
 			return err
 		}
-		// TODO: need to set default SetImageMetadata if opts.BusType == "scsi"
-		err = volumes.SetImageMetadata(ctx, t.ClientSet.BlockStorage, volume.ID, volumes.ImageMetadataOpts{
-			Metadata: map[string]string{
-				"hw_disk_bus": "scsi",
-				"hw_machine_type": "q35",
-				"hw_scsi_model": "virtio-scsi",
-			},
+
+		if opts.BusType == "scsi" {
+			err = volumes.SetImageMetadata(ctx, t.ClientSet.BlockStorage, volume.ID, volumes.ImageMetadataOpts{
+				Metadata: map[string]string{
+					"hw_disk_bus":     "scsi",
+					"hw_machine_type": "q35",
+					"hw_scsi_model":   "virtio-scsi",
+				},
 			}).ExtractErr()
 			if err != nil {
 				return err
 			}
+		}
 
 		// TODO: check if volume is bootable?
 		if true {
@@ -226,7 +220,7 @@ func (t *OpenStack) Connect(ctx context.Context) error {
 	return nil
 }
 
-func (t *OpenStack) createVolume(ctx context.Context, opts *VolumeCreateOpts, metadata map[string]string) (*volumes.Volume, error) {
+func (t *OpenStack) createVolume(ctx context.Context, opts *VolumeCreateOpts, metadata map[string]string, hintOpts *SchedulerHintOpts) (*volumes.Volume, error) {
 	log.Info("Creating new volume")
 	volume, err := volumes.Create(ctx, t.ClientSet.BlockStorage, volumes.CreateOpts{
 		Name:             DiskLabel(t.VirtualMachine, t.Disk),
@@ -234,7 +228,7 @@ func (t *OpenStack) createVolume(ctx context.Context, opts *VolumeCreateOpts, me
 		AvailabilityZone: opts.AvailabilityZone,
 		VolumeType:       opts.VolumeType,
 		Metadata:         metadata,
-	}, nil).Extract()
+	}, hintOpts.Convert()).Extract()
 	if err != nil {
 		return nil, err
 	}
